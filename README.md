@@ -49,7 +49,7 @@ snapdf https://example.com/thread -s "article.message"
 snapdf https://chatgpt.com/share/abc123 -T 120000
 ```
 
-If no output path is given, files are saved as `output.pdf` or `output.txt` in the current directory. Existing files are never overwritten — snapdf increments the filename (`output-1.pdf`, `output-2.pdf`, etc.).
+If no output path is given, files are saved as `output.pdf` or `output.txt` in the current directory. If a name is given without an extension, the correct one is added automatically (`conversation` → `conversation.pdf`). Existing files are never overwritten — snapdf increments the filename (`output-1.pdf`, `output-2.pdf`, etc.).
 
 ## Programmatic API
 

@@ -50,6 +50,13 @@ export const createProgram = () =>
       const timeout = Number(typeof options.timeout === 'string' ? options.timeout : 60000) || 60000
       const selector = typeof options.selector === 'string' ? options.selector : undefined
 
+      const ext = txtMode ? '.txt' : '.pdf'
+      const normalizedOut = outFile
+        ? path.extname(outFile)
+          ? outFile
+          : `${outFile}${ext}`
+        : `output${ext}`
+
       const spinner = ora(cosmetic.faint('Launching browser')).start()
 
       const onProgress = (msg: string) => {
@@ -62,7 +69,7 @@ export const createProgram = () =>
           process.exit(1)
         })
 
-        const dest = await resolveOutputPath(outFile ?? 'output.txt')
+        const dest = await resolveOutputPath(normalizedOut)
         spinner.text = `Saving to ${cosmetic.cyan(dest)}`
         await fs.writeFile(dest, text, 'utf8')
         spinner.succeed(`Saved to ${cosmetic.underline.cyan(dest)}`)
@@ -72,7 +79,7 @@ export const createProgram = () =>
           process.exit(1)
         })
 
-        const dest = await resolveOutputPath(outFile ?? 'output.pdf')
+        const dest = await resolveOutputPath(normalizedOut)
         spinner.text = `Saving to ${cosmetic.cyan(dest)}`
         await fs.writeFile(dest, pdf)
         spinner.succeed(`Saved to ${cosmetic.underline.cyan(dest)}`)
