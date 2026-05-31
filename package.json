@@ -24,7 +24,10 @@
   "sideEffects": false,
   "type": "commonjs",
   "exports": {
-    ".": "./dist/index.mjs"
+    ".": {
+      "import": "./dist/index.mjs",
+      "types": "./dist/index.d.mts"
+    }
   },
   "bin": {
     "snapdf": "./dist/cli.mjs"
