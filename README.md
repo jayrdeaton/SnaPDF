@@ -49,7 +49,7 @@ snapdf https://example.com/thread -s "article.message"
 snapdf https://chatgpt.com/share/abc123 -T 120000
 ```
 
-If no output path is given, files are saved as `output.pdf` or `output.txt` in the current directory. If a name is given without an extension, the correct one is added automatically (`conversation` → `conversation.pdf`). Existing files are never overwritten — snapdf increments the filename (`output-1.pdf`, `output-2.pdf`, etc.).
+If no output path is given, the filename is derived from the page title (e.g. `crumby-app-discussion.pdf`). If a name is given without an extension, the correct one is added automatically (`conversation` → `conversation.pdf`). Existing files are never overwritten — snapdf increments the filename (`output-1.pdf`, `output-2.pdf`, etc.).
 
 ## Programmatic API
 
@@ -58,13 +58,15 @@ npm install snapdf
 ```
 
 ```ts
-import { fetchPdf, fetchTxt } from 'snapdf'
+import { fetchPdf, fetchTxt, type FetchResult } from 'snapdf'
 ```
 
-### `fetchPdf(url, options?): Promise<Buffer>`
+### `fetchPdf(url, options?): Promise<FetchResult>`
+
+Returns `{ buffer: Buffer, title: string }`.
 
 ```ts
-const pdf = await fetchPdf('https://chatgpt.com/share/abc123', {
+const { buffer, title } = await fetchPdf('https://chatgpt.com/share/abc123', {
   pageSize: 'letter',   // 'letter' | 'a4'
   margin: 36,           // points, 72pt = 1in
   landscape: false,
@@ -75,8 +77,7 @@ const pdf = await fetchPdf('https://chatgpt.com/share/abc123', {
   onProgress: (msg) => console.log(msg),
 })
 
-// Stream it, write it, send it as a response — it's just a Buffer
-await fs.writeFile('output.pdf', pdf)
+await fs.writeFile(`${title}.pdf`, buffer)
 ```
 
 ### `fetchTxt(url, options?): Promise<string>`
@@ -91,7 +92,7 @@ const text = await fetchTxt('https://chatgpt.com/share/abc123', {
 })
 ```
 
-### FetchOptions
+### Types
 
 ```ts
 interface FetchOptions {
@@ -103,6 +104,11 @@ interface FetchOptions {
   cookies?: CookieParam[]            // Puppeteer cookie objects
   executablePath?: string            // Path to Chrome binary
   onProgress?: (msg: string) => void // Progress callback
+}
+
+interface FetchResult {
+  buffer: Buffer  // PDF bytes
+  title: string   // Page title, sanitized for use as a filename
 }
 ```
 
@@ -116,9 +122,9 @@ const app = express()
 
 app.get('/pdf', async (req, res) => {
   const { url } = req.query
-  const pdf = await fetchPdf(String(url))
+  const { buffer } = await fetchPdf(String(url))
   res.setHeader('Content-Type', 'application/pdf')
-  res.send(pdf)
+  res.send(buffer)
 })
 ```
 
@@ -127,7 +133,7 @@ app.get('/pdf', async (req, res) => {
 Pass session cookies to access pages behind a login:
 
 ```ts
-const pdf = await fetchPdf('https://chatgpt.com/c/private-thread', {
+const { buffer } = await fetchPdf('https://chatgpt.com/c/private-thread', {
   cookies: [
     { name: '__Secure-next-auth.session-token', value: '...', domain: 'chatgpt.com' }
   ]
@@ -142,7 +148,7 @@ Puppeteer bundles its own Chrome, which works on standard servers and locally. F
 import chromium from '@sparticuz/chromium'
 import { fetchPdf } from 'snapdf'
 
-const pdf = await fetchPdf(url, {
+const { buffer } = await fetchPdf(url, {
   executablePath: await chromium.executablePath(),
 })
 ```

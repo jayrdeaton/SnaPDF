@@ -1,6 +1,6 @@
 {
   "name": "snapdf",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "Save ChatGPT conversations and JavaScript-rendered pages to searchable PDF or plain text",
   "keywords": [
     "cli",

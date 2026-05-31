@@ -106,7 +106,12 @@ export const fetchTxt = async (url: string, options: FetchOptions = {}): Promise
   }
 }
 
-export const fetchPdf = async (url: string, options: FetchOptions = {}): Promise<Buffer> => {
+export interface FetchResult {
+  buffer: Buffer
+  title: string
+}
+
+export const fetchPdf = async (url: string, options: FetchOptions = {}): Promise<FetchResult> => {
   const { pageSize = 'letter', margin = 36, landscape = false, onProgress = noop, executablePath, timeout = 60000, cookies, selector } = options
   const marginIn = margin / 72
   const pageSizeFmt = pageSize === 'a4' ? 'A4' : 'Letter'
@@ -138,11 +143,16 @@ export const fetchPdf = async (url: string, options: FetchOptions = {}): Promise
       .catch(() => {})
     await new Promise((r) => setTimeout(r, 500))
 
+    const pageTitle = await page.title()
+
     onProgress('Hiding fixed UI chrome')
     await page.addStyleTag({
       content: `
         *:not(script):not(style) { transition: none !important; animation: none !important; }
         [style*="position: fixed"], [style*="position:fixed"] { display: none !important; }
+        * { scrollbar-width: none !important; }
+        *::-webkit-scrollbar, *::-webkit-scrollbar-track, *::-webkit-scrollbar-thumb { display: none !important; }
+        *::before, *::after { background: transparent !important; background-image: none !important; border: none !important; box-shadow: none !important; }
       `
     })
     await page.evaluate(() => {
@@ -177,6 +187,64 @@ export const fetchPdf = async (url: string, options: FetchOptions = {}): Promise
       }
       return document.documentElement
     }, msgSelector)
+
+    // Hide scrollbars on the scroll container itself before any capture
+    await page.evaluate((el) => {
+      el.style.setProperty('scrollbar-width', 'none', 'important')
+      ;(el as HTMLElement).style.setProperty('-ms-overflow-style', 'none', 'important')
+    }, containerHandle)
+
+    onProgress('Scrolling to load all content')
+    let prevH = 0
+    let stableCount = 0
+    while (stableCount < 3) {
+      await page.evaluate((el) => {
+        el.scrollTop = el.scrollHeight
+      }, containerHandle)
+      await new Promise((r) => setTimeout(r, 1000))
+      const h = await page.evaluate((el) => el.scrollHeight, containerHandle)
+      if (h === prevH) stableCount++
+      else {
+        stableCount = 0
+        prevH = h
+      }
+    }
+
+    onProgress('Expanding collapsed content')
+    // Scroll back to top so viewport-gated buttons are reachable
+    await page.evaluate((el) => { el.scrollTop = 0 }, containerHandle)
+    await new Promise((r) => setTimeout(r, 500))
+
+
+    let expandCount = 0
+    for (let pass = 0; pass < 8; pass++) {
+      const clicked = await page.evaluate(() => {
+        const pattern = /show\s+more|see\s+more|load\s+more|read\s+more|show\s+full/i
+        let count = 0
+        document.querySelectorAll<HTMLElement>('button, [role="button"], a, span[tabindex]').forEach((el) => {
+          const text = (el.innerText ?? el.textContent ?? '').trim()
+          if (pattern.test(text)) {
+            el.scrollIntoView({ block: 'center' })
+            el.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, view: window }))
+            count++
+          }
+        })
+        return count
+      })
+      expandCount += clicked
+      await new Promise((r) => setTimeout(r, 1000))
+      if (clicked === 0) break
+    }
+    if (expandCount > 0) onProgress(`Expanded ${expandCount} collapsed section(s)`)
+
+    // Remove "Show less" buttons left behind after expansion
+    await page.evaluate(() => {
+      const pattern = /show\s+less|see\s+less|collapse/i
+      document.querySelectorAll<HTMLElement>('button, [role="button"], a, span[tabindex]').forEach((el) => {
+        const text = (el.innerText ?? el.textContent ?? '').trim()
+        if (pattern.test(text)) el.remove()
+      })
+    })
 
     await page.evaluate((el) => {
       el.scrollTop = 0
@@ -215,9 +283,9 @@ export const fetchPdf = async (url: string, options: FetchOptions = {}): Promise
       ;(window as PageWindow).__stopObserver = () => observer.disconnect()
     }, msgSelector)
 
-    onProgress('Scrolling to load all content')
-    let prevH = 0
-    let stableCount = 0
+    onProgress('Scrolling to collect all nodes')
+    prevH = 0
+    stableCount = 0
     while (stableCount < 3) {
       await page.evaluate((el) => {
         el.scrollTop = el.scrollHeight
@@ -277,6 +345,20 @@ ${styleInjections}
       overflow: visible !important;
     }
   }
+  * { scrollbar-width: none !important; }
+  *::-webkit-scrollbar, *::-webkit-scrollbar-track, *::-webkit-scrollbar-thumb { display: none !important; width: 0 !important; }
+  *::before, *::after {
+    background: transparent !important;
+    background-image: none !important;
+    border: none !important;
+    box-shadow: none !important;
+    outline: none !important;
+  }
+  html, body {
+    border: none !important;
+    outline: none !important;
+    box-shadow: none !important;
+  }
   body {
     margin: 0;
     padding: 0;
@@ -318,7 +400,7 @@ ${nodes.join('\n')}
         printBackground: true
       })
 
-      return Buffer.from(pdfBuffer)
+      return { buffer: Buffer.from(pdfBuffer), title: pageTitle }
     } finally {
       await browser2.close()
     }

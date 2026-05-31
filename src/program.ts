@@ -5,10 +5,21 @@ import path from 'path'
 import { command } from 'termkit'
 
 import { type PageSizeKey } from './constants'
-import { fetchPdf, fetchTxt } from './fetch'
+import { type FetchResult, fetchPdf, fetchTxt } from './fetch'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const cosmetic = cosmeticLib as any
+
+const titleToFilename = (title: string): string => {
+  // Strip common site suffixes like " - Claude" or " | ChatGPT"
+  const clean = title.replace(/\s*[-|]\s*(claude|chatgpt|openai|anthropic).*$/i, '').trim()
+  if (!clean) return 'output'
+  return clean
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 80)
+}
 
 const resolveOutputPath = async (desired: string): Promise<string> => {
   try {
@@ -51,7 +62,6 @@ export const createProgram = () =>
       const selector = typeof options.selector === 'string' ? options.selector : undefined
 
       const ext = txtMode ? '.txt' : '.pdf'
-      const normalizedOut = outFile ? (path.extname(outFile) ? outFile : `${outFile}${ext}`) : `output${ext}`
 
       const spinner = ora(cosmetic.faint('Launching browser')).start()
 
@@ -65,17 +75,20 @@ export const createProgram = () =>
           process.exit(1)
         })
 
+        const normalizedOut = outFile ? (path.extname(outFile) ? outFile : `${outFile}${ext}`) : `output${ext}`
         const dest = await resolveOutputPath(normalizedOut)
         spinner.text = `Saving to ${cosmetic.cyan(dest)}`
         await fs.writeFile(dest, text, 'utf8')
         spinner.succeed(`Saved to ${cosmetic.underline.cyan(dest)}`)
       } else {
-        const pdf = await fetchPdf(url, { pageSize, margin, landscape, timeout, selector, onProgress }).catch((err) => {
+        const result = await fetchPdf(url, { pageSize, margin, landscape, timeout, selector, onProgress }).catch((err) => {
           spinner.fail(cosmetic.red(String(err)))
           process.exit(1)
         })
+        const { buffer: pdf, title } = result as FetchResult
 
-        const dest = await resolveOutputPath(normalizedOut)
+        const defaultName = outFile ? (path.extname(outFile) ? outFile : `${outFile}${ext}`) : `${titleToFilename(title)}${ext}`
+        const dest = await resolveOutputPath(defaultName)
         spinner.text = `Saving to ${cosmetic.cyan(dest)}`
         await fs.writeFile(dest, pdf)
         spinner.succeed(`Saved to ${cosmetic.underline.cyan(dest)}`)
