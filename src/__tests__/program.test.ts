@@ -35,6 +35,27 @@ describe('createProgram', () => {
     expect(opt?.short).toBe('p')
   })
 
+  it('has a -l/--landscape option', () => {
+    const cmd = createProgram()
+    const opt = cmd.optionsArray.find((o) => o.long === 'landscape')
+    expect(opt).toBeDefined()
+    expect(opt?.short).toBe('l')
+  })
+
+  it('has a -T/--timeout option', () => {
+    const cmd = createProgram()
+    const opt = cmd.optionsArray.find((o) => o.long === 'timeout')
+    expect(opt).toBeDefined()
+    expect(opt?.short).toBe('T')
+  })
+
+  it('has a -s/--selector option', () => {
+    const cmd = createProgram()
+    const opt = cmd.optionsArray.find((o) => o.long === 'selector')
+    expect(opt).toBeDefined()
+    expect(opt?.short).toBe('s')
+  })
+
   it('has url and output positional variables', () => {
     const cmd = createProgram()
     const names = cmd.variables?.map((v) => v.name) ?? []

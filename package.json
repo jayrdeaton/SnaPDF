@@ -1,15 +1,19 @@
 {
   "name": "pdfetch",
   "version": "1.0.0",
-  "description": "Convert JavaScript-rendered web pages to PDF or plain text",
+  "description": "Save ChatGPT conversations and JavaScript-rendered pages to searchable PDF or plain text",
   "keywords": [
     "cli",
     "pdf",
+    "chatgpt",
+    "chatgpt-to-pdf",
     "html-to-pdf",
     "webpage-to-pdf",
+    "puppeteer",
     "headless",
-    "chrome",
-    "web"
+    "scraper",
+    "virtual-scroll",
+    "chrome"
   ],
   "repository": {
     "type": "git",
@@ -46,7 +50,6 @@
   "dependencies": {
     "cosmetic": "^1.4.0",
     "ora": "^9.4.0",
-    "pdf-lib": "^1.17.1",
     "puppeteer": "^25.0.0",
     "termkit": "^2.0.1"
   },
