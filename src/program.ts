@@ -51,11 +51,7 @@ export const createProgram = () =>
       const selector = typeof options.selector === 'string' ? options.selector : undefined
 
       const ext = txtMode ? '.txt' : '.pdf'
-      const normalizedOut = outFile
-        ? path.extname(outFile)
-          ? outFile
-          : `${outFile}${ext}`
-        : `output${ext}`
+      const normalizedOut = outFile ? (path.extname(outFile) ? outFile : `${outFile}${ext}`) : `output${ext}`
 
       const spinner = ora(cosmetic.faint('Launching browser')).start()
 
