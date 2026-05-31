@@ -212,9 +212,10 @@ export const fetchPdf = async (url: string, options: FetchOptions = {}): Promise
 
     onProgress('Expanding collapsed content')
     // Scroll back to top so viewport-gated buttons are reachable
-    await page.evaluate((el) => { el.scrollTop = 0 }, containerHandle)
+    await page.evaluate((el) => {
+      el.scrollTop = 0
+    }, containerHandle)
     await new Promise((r) => setTimeout(r, 500))
-
 
     let expandCount = 0
     for (let pass = 0; pass < 8; pass++) {

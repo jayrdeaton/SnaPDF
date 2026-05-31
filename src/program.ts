@@ -5,7 +5,7 @@ import path from 'path'
 import { command } from 'termkit'
 
 import { type PageSizeKey } from './constants'
-import { type FetchResult, fetchPdf, fetchTxt } from './fetch'
+import { fetchPdf, type FetchResult, fetchTxt } from './fetch'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const cosmetic = cosmeticLib as any
