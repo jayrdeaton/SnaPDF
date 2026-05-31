@@ -27,7 +27,7 @@
     ".": "./dist/index.mjs"
   },
   "bin": {
-    "snapdf": "./dist/index.mjs"
+    "snapdf": "./dist/cli.mjs"
   },
   "files": [
     "dist"
