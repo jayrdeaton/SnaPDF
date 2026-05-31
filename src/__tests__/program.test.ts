@@ -11,9 +11,9 @@ jest.mock('ora', () => ({
 import { createProgram } from '../program'
 
 describe('createProgram', () => {
-  it('creates a command named pdfetch', () => {
+  it('creates a command named snapdf', () => {
     const cmd = createProgram()
-    expect(cmd.name).toBe('pdfetch')
+    expect(cmd.name).toBe('snapdf')
   })
 
   it('has a description', () => {

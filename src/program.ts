@@ -31,7 +31,7 @@ const resolveOutputPath = async (desired: string): Promise<string> => {
 }
 
 export const createProgram = () =>
-  command('pdfetch', '<url> [output]')
+  command('snapdf', '<url> [output]')
     .description('Scrape JavaScript-rendered pages to PDF or plain text')
     .option('t', 'txt', null, 'Save as a plain text file instead of PDF')
     .option('p', 'page-size', '[size]', 'PDF page size: a4 or letter (default: letter)')

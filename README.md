@@ -1,19 +1,19 @@
-# pdfetch
+# snapdf
 
 Convert JavaScript-rendered web pages to PDF or plain text. Built for sites with virtual scrolling (ChatGPT, Claude, etc.) where the browser's native print fails because content isn't all in the DOM at once.
 
-Instead of screenshotting, pdfetch scrolls through the page collecting DOM nodes as virtual scroll renders them, reassembles them into a static document, and prints it with Chrome's native PDF engine — giving you a real text-based, searchable PDF.
+Instead of screenshotting, snapdf scrolls through the page collecting DOM nodes as virtual scroll renders them, reassembles them into a static document, and prints it with Chrome's native PDF engine — giving you a real text-based, searchable PDF.
 
 ## Installation
 
 ```sh
-npm install -g pdfetch
+npm install -g snapdf
 ```
 
 ## CLI
 
 ```sh
-pdfetch <url> [output]
+snapdf <url> [output]
 ```
 
 ### Options
@@ -31,34 +31,34 @@ pdfetch <url> [output]
 
 ```sh
 # Save a ChatGPT shared conversation to PDF
-pdfetch https://chatgpt.com/share/abc123
+snapdf https://chatgpt.com/share/abc123
 
 # Custom output path
-pdfetch https://chatgpt.com/share/abc123 conversation.pdf
+snapdf https://chatgpt.com/share/abc123 conversation.pdf
 
 # Plain text
-pdfetch https://chatgpt.com/share/abc123 -t
+snapdf https://chatgpt.com/share/abc123 -t
 
 # A4, 0.5in margins, landscape
-pdfetch https://chatgpt.com/share/abc123 -p a4 -m 36 -l
+snapdf https://chatgpt.com/share/abc123 -p a4 -m 36 -l
 
 # Custom selector for other sites
-pdfetch https://example.com/thread -s "article.message"
+snapdf https://example.com/thread -s "article.message"
 
 # Longer timeout for slow pages
-pdfetch https://chatgpt.com/share/abc123 -T 120000
+snapdf https://chatgpt.com/share/abc123 -T 120000
 ```
 
-If no output path is given, files are saved as `output.pdf` or `output.txt` in the current directory. Existing files are never overwritten — pdfetch increments the filename (`output-1.pdf`, `output-2.pdf`, etc.).
+If no output path is given, files are saved as `output.pdf` or `output.txt` in the current directory. Existing files are never overwritten — snapdf increments the filename (`output-1.pdf`, `output-2.pdf`, etc.).
 
 ## Programmatic API
 
 ```sh
-npm install pdfetch
+npm install snapdf
 ```
 
 ```ts
-import { fetchPdf, fetchTxt } from 'pdfetch'
+import { fetchPdf, fetchTxt } from 'snapdf'
 ```
 
 ### `fetchPdf(url, options?): Promise<Buffer>`
@@ -110,7 +110,7 @@ interface FetchOptions {
 
 ```ts
 import express from 'express'
-import { fetchPdf } from 'pdfetch'
+import { fetchPdf } from 'snapdf'
 
 const app = express()
 
@@ -140,7 +140,7 @@ Puppeteer bundles its own Chrome, which works on standard servers and locally. F
 
 ```ts
 import chromium from '@sparticuz/chromium'
-import { fetchPdf } from 'pdfetch'
+import { fetchPdf } from 'snapdf'
 
 const pdf = await fetchPdf(url, {
   executablePath: await chromium.executablePath(),
