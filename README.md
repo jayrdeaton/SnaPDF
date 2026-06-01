@@ -74,6 +74,7 @@ const { buffer, title } = await fetchPdf('https://chatgpt.com/share/abc123', {
   selector: '[data-message-author-role]',
   cookies: [{ name: 'session', value: '...', domain: 'chatgpt.com' }],
   executablePath: '/path/to/chrome',
+  args: ['--no-sandbox'],
   onProgress: (msg) => console.log(msg),
 })
 
@@ -88,6 +89,7 @@ const text = await fetchTxt('https://chatgpt.com/share/abc123', {
   selector: '[data-message-author-role]',
   cookies: [...],
   executablePath: '/path/to/chrome',
+  args: ['--no-sandbox'],
   onProgress: (msg) => console.log(msg),
 })
 ```
@@ -103,6 +105,7 @@ interface FetchOptions {
   selector?: string                  // CSS selector for content nodes
   cookies?: CookieParam[]            // Puppeteer cookie objects
   executablePath?: string            // Path to Chrome binary
+  args?: string[]                    // Puppeteer launch args (e.g. ['--no-sandbox'])
   onProgress?: (msg: string) => void // Progress callback
 }
 
@@ -150,6 +153,7 @@ import { fetchPdf } from 'snapdf'
 
 const { buffer } = await fetchPdf(url, {
   executablePath: await chromium.executablePath(),
+  args: chromium.args,
 })
 ```
 

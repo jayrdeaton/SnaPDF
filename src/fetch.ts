@@ -13,6 +13,7 @@ export interface FetchOptions {
   cookies?: CookieParam[]
   selector?: string
   executablePath?: string
+  args?: string[]
   onProgress?: (message: string) => void
 }
 
@@ -29,11 +30,11 @@ const DEFAULT_SELECTOR = '[data-message-author-role], .text-message, article'
 const DEFAULT_MSG_SELECTOR = '[data-message-author-role]'
 
 export const fetchTxt = async (url: string, options: FetchOptions = {}): Promise<string> => {
-  const { onProgress = noop, executablePath, timeout = 60000, cookies, selector } = options
+  const { onProgress = noop, executablePath, args, timeout = 60000, cookies, selector } = options
   const msgSelector = selector ?? DEFAULT_MSG_SELECTOR
   const waitSelector = selector ?? DEFAULT_SELECTOR
 
-  const browser = await puppeteer.launch({ headless: true, executablePath })
+  const browser = await puppeteer.launch({ headless: true, executablePath, args })
   try {
     const page = await browser.newPage()
     await page.setViewport({ width: 1280, height: 900 })
@@ -112,13 +113,13 @@ export interface FetchResult {
 }
 
 export const fetchPdf = async (url: string, options: FetchOptions = {}): Promise<FetchResult> => {
-  const { pageSize = 'letter', margin = 36, landscape = false, onProgress = noop, executablePath, timeout = 60000, cookies, selector } = options
+  const { pageSize = 'letter', margin = 36, landscape = false, onProgress = noop, executablePath, args, timeout = 60000, cookies, selector } = options
   const marginIn = margin / 72
   const pageSizeFmt = pageSize === 'a4' ? 'A4' : 'Letter'
   const msgSelector = selector ?? DEFAULT_MSG_SELECTOR
   const waitSelector = selector ?? DEFAULT_SELECTOR
 
-  const browser = await puppeteer.launch({ headless: true, executablePath })
+  const browser = await puppeteer.launch({ headless: true, executablePath, args })
   try {
     const page = await browser.newPage()
     await page.setViewport({ width: 1280, height: 900 })
@@ -382,7 +383,7 @@ ${nodes.join('\n')}
 </html>`
 
     onProgress('Rendering static page')
-    const browser2 = await puppeteer.launch({ headless: true, executablePath })
+    const browser2 = await puppeteer.launch({ headless: true, executablePath, args })
     try {
       const printPage = await browser2.newPage()
       await printPage.setContent(staticHtml, { waitUntil: 'domcontentloaded', timeout })
