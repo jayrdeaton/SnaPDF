@@ -1,8 +1,8 @@
 import cosmeticLib from 'cosmetic'
 import fs from 'fs/promises'
-import { Spinner } from 'termpulse'
 import path from 'path'
 import { command } from 'termkit'
+import { Spinner } from 'termpulse'
 
 import { type PageSizeKey } from './constants'
 import { fetchPdf, type FetchResult, fetchTxt } from './fetch'
