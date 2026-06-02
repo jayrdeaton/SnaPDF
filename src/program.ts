@@ -1,6 +1,6 @@
 import cosmeticLib from 'cosmetic'
 import fs from 'fs/promises'
-import ora from 'ora'
+import { Spinner } from 'termpulse'
 import path from 'path'
 import { command } from 'termkit'
 
@@ -63,34 +63,35 @@ export const createProgram = () =>
 
       const ext = txtMode ? '.txt' : '.pdf'
 
-      const spinner = ora(cosmetic.faint('Launching browser')).start()
+      const spinner = new Spinner({ text: cosmetic.faint('Launching browser') })
+      spinner.start()
 
       const onProgress = (msg: string) => {
-        spinner.text = cosmetic.faint(msg)
+        spinner.message(cosmetic.faint(msg))
       }
 
       if (txtMode) {
         const text = await fetchTxt(url, { onProgress, timeout, cookies: undefined, selector }).catch((err) => {
-          spinner.fail(cosmetic.red(String(err)))
+          spinner.fail(cosmetic.red(String(err))).stop()
           process.exit(1)
         })
 
         const normalizedOut = outFile ? (path.extname(outFile) ? outFile : `${outFile}${ext}`) : `output${ext}`
         const dest = await resolveOutputPath(normalizedOut)
-        spinner.text = `Saving to ${cosmetic.cyan(dest)}`
+        spinner.message(`Saving to ${cosmetic.cyan(dest)}`)
         await fs.writeFile(dest, text, 'utf8')
-        spinner.succeed(`Saved to ${cosmetic.underline.cyan(dest)}`)
+        spinner.succeed(`Saved to ${cosmetic.underline.cyan(dest)}`).stop()
       } else {
         const result = await fetchPdf(url, { pageSize, margin, landscape, timeout, selector, onProgress }).catch((err) => {
-          spinner.fail(cosmetic.red(String(err)))
+          spinner.fail(cosmetic.red(String(err))).stop()
           process.exit(1)
         })
         const { buffer: pdf, title } = result as FetchResult
 
         const defaultName = outFile ? (path.extname(outFile) ? outFile : `${outFile}${ext}`) : `${titleToFilename(title)}${ext}`
         const dest = await resolveOutputPath(defaultName)
-        spinner.text = `Saving to ${cosmetic.cyan(dest)}`
+        spinner.message(`Saving to ${cosmetic.cyan(dest)}`)
         await fs.writeFile(dest, pdf)
-        spinner.succeed(`Saved to ${cosmetic.underline.cyan(dest)}`)
+        spinner.succeed(`Saved to ${cosmetic.underline.cyan(dest)}`).stop()
       }
     })

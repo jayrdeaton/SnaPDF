@@ -3,9 +3,15 @@ jest.mock('puppeteer', () => ({
   default: { launch: jest.fn() }
 }))
 
-jest.mock('ora', () => ({
+jest.mock('termpulse', () => ({
   __esModule: true,
-  default: jest.fn(() => ({ start: jest.fn().mockReturnThis(), text: '' }))
+  Spinner: jest.fn().mockImplementation(() => ({
+    start: jest.fn().mockReturnThis(),
+    stop: jest.fn().mockReturnThis(),
+    message: jest.fn().mockReturnThis(),
+    succeed: jest.fn().mockReturnThis(),
+    fail: jest.fn().mockReturnThis(),
+  }))
 }))
 
 import { createProgram } from '../program'
