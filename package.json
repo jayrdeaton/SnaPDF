@@ -54,7 +54,7 @@
     "cosmetic": "^1.4.0",
     "puppeteer": "^25.1.0",
     "termkit": "^2.0.2",
-    "termpulse": "^1.1.1"
+    "termpulse": "^1.1.2"
   },
   "devDependencies": {
     "@types/jest": "^30.0.0",
