@@ -26,6 +26,8 @@ snapdf <url> [output]
 | `-l`, `--landscape` | Landscape orientation |
 | `-T`, `--timeout` | Page load timeout in milliseconds (default: `60000`) |
 | `-s`, `--selector` | CSS selector for message elements (default: ChatGPT) |
+| `-H`, `--hide-user-input` | Omit user messages from the output |
+| `-A`, `--hide-assistant-output` | Omit assistant messages from the output |
 
 ### Examples
 
@@ -107,6 +109,8 @@ interface FetchOptions {
   executablePath?: string            // Path to Chrome binary
   args?: string[]                    // Puppeteer launch args (e.g. ['--no-sandbox'])
   onProgress?: (msg: string) => void // Progress callback
+  hideUserInput?: boolean            // Omit user messages from output
+  hideAssistantOutput?: boolean      // Omit assistant messages from output
 }
 
 interface FetchResult {

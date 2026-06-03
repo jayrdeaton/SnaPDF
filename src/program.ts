@@ -50,6 +50,8 @@ export const createProgram = () =>
     .option('l', 'landscape', null, 'PDF landscape orientation')
     .option('T', 'timeout', '[ms]', 'Page load timeout in milliseconds (default: 60000)')
     .option('s', 'selector', '[css]', 'CSS selector for message elements (default: ChatGPT)')
+    .option('H', 'hide-user-input', null, 'Omit user messages from the output')
+    .option('A', 'hide-assistant-output', null, 'Omit assistant messages from the output')
     .action(async (options) => {
       const url = options.url as string
       const outFile = options.output as string | undefined
@@ -60,6 +62,8 @@ export const createProgram = () =>
       const landscape = Boolean(options.landscape)
       const timeout = Number(typeof options.timeout === 'string' ? options.timeout : 60000) || 60000
       const selector = typeof options.selector === 'string' ? options.selector : undefined
+      const hideUserInput = Boolean(options['hide-user-input'])
+      const hideAssistantOutput = Boolean(options['hide-assistant-output'])
 
       const ext = txtMode ? '.txt' : '.pdf'
 
@@ -71,7 +75,7 @@ export const createProgram = () =>
       }
 
       if (txtMode) {
-        const text = await fetchTxt(url, { onProgress, timeout, cookies: undefined, selector }).catch((err) => {
+        const text = await fetchTxt(url, { onProgress, timeout, cookies: undefined, selector, hideUserInput, hideAssistantOutput }).catch((err) => {
           spinner.fail(cosmetic.red(String(err))).stop()
           process.exit(1)
         })
@@ -82,7 +86,7 @@ export const createProgram = () =>
         await fs.writeFile(dest, text, 'utf8')
         spinner.succeed(`Saved to ${cosmetic.underline.cyan(dest)}`).stop()
       } else {
-        const result = await fetchPdf(url, { pageSize, margin, landscape, timeout, selector, onProgress }).catch((err) => {
+        const result = await fetchPdf(url, { pageSize, margin, landscape, timeout, selector, hideUserInput, hideAssistantOutput, onProgress }).catch((err) => {
           spinner.fail(cosmetic.red(String(err))).stop()
           process.exit(1)
         })

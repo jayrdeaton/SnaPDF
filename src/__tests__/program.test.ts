@@ -62,6 +62,20 @@ describe('createProgram', () => {
     expect(opt?.short).toBe('s')
   })
 
+  it('has a -H/--hide-user-input option', () => {
+    const cmd = createProgram()
+    const opt = cmd.optionsArray.find((o) => o.long === 'hide-user-input')
+    expect(opt).toBeDefined()
+    expect(opt?.short).toBe('H')
+  })
+
+  it('has a -A/--hide-assistant-output option', () => {
+    const cmd = createProgram()
+    const opt = cmd.optionsArray.find((o) => o.long === 'hide-assistant-output')
+    expect(opt).toBeDefined()
+    expect(opt?.short).toBe('A')
+  })
+
   it('has url and output positional variables', () => {
     const cmd = createProgram()
     const names = cmd.variables?.map((v) => v.name) ?? []

@@ -15,6 +15,8 @@ export interface FetchOptions {
   executablePath?: string
   args?: string[]
   onProgress?: (message: string) => void
+  hideUserInput?: boolean
+  hideAssistantOutput?: boolean
 }
 
 type PageWindow = Window &
@@ -30,7 +32,7 @@ const DEFAULT_SELECTOR = '[data-message-author-role], .text-message, article'
 const DEFAULT_MSG_SELECTOR = '[data-message-author-role]'
 
 export const fetchTxt = async (url: string, options: FetchOptions = {}): Promise<string> => {
-  const { onProgress = noop, executablePath, args, timeout = 60000, cookies, selector } = options
+  const { onProgress = noop, executablePath, args, timeout = 60000, cookies, selector, hideUserInput = false, hideAssistantOutput = false } = options
   const msgSelector = selector ?? DEFAULT_MSG_SELECTOR
   const waitSelector = selector ?? DEFAULT_SELECTOR
 
@@ -84,22 +86,30 @@ export const fetchTxt = async (url: string, options: FetchOptions = {}): Promise
     await new Promise((r) => setTimeout(r, 1500))
 
     onProgress('Extracting text')
-    const text = await page.evaluate((sel) => {
-      const turns = document.querySelectorAll(sel)
-      if (turns.length > 0) {
-        return Array.from(turns)
-          .map((el) => {
-            const role = el.getAttribute('data-message-author-role')
-            if (role) {
-              const label = role === 'user' ? 'USER' : 'ASSISTANT'
-              return `[${label}]\n${el.textContent?.trim() ?? ''}`
-            }
-            return el.textContent?.trim() ?? ''
-          })
-          .join('\n\n---\n\n')
-      }
-      return document.body.innerText
-    }, msgSelector)
+    const text = await page.evaluate(
+      (sel, hideUser, hideAssistant) => {
+        const turns = document.querySelectorAll(sel)
+        if (turns.length > 0) {
+          return Array.from(turns)
+            .map((el) => {
+              const role = el.getAttribute('data-message-author-role')
+              if (hideUser && role === 'user') return null
+              if (hideAssistant && role !== 'user') return null
+              if (role) {
+                const label = role === 'user' ? 'USER' : 'ASSISTANT'
+                return `[${label}]\n${el.textContent?.trim() ?? ''}`
+              }
+              return el.textContent?.trim() ?? ''
+            })
+            .filter(Boolean)
+            .join('\n\n---\n\n')
+        }
+        return document.body.innerText
+      },
+      msgSelector,
+      hideUserInput,
+      hideAssistantOutput
+    )
 
     return text
   } finally {
@@ -113,7 +123,7 @@ export interface FetchResult {
 }
 
 export const fetchPdf = async (url: string, options: FetchOptions = {}): Promise<FetchResult> => {
-  const { pageSize = 'letter', margin = 36, landscape = false, onProgress = noop, executablePath, args, timeout = 60000, cookies, selector } = options
+  const { pageSize = 'letter', margin = 36, landscape = false, onProgress = noop, executablePath, args, timeout = 60000, cookies, selector, hideUserInput = false, hideAssistantOutput = false } = options
   const marginIn = margin / 72
   const pageSizeFmt = pageSize === 'a4' ? 'A4' : 'Letter'
   const msgSelector = selector ?? DEFAULT_MSG_SELECTOR
@@ -373,6 +383,8 @@ ${styleInjections}
   [data-message-author-role="user"] {
     padding-bottom: 28px !important;
   }
+  ${hideUserInput ? '[data-message-author-role="user"] { display: none !important; }' : ''}
+  ${hideAssistantOutput ? '[data-message-author-role="assistant"] { display: none !important; }' : ''}
 </style>
 </head>
 <body>
