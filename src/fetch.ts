@@ -40,7 +40,7 @@ const setupStealth = async (page: Page): Promise<void> => {
       app: {},
       csi: () => {},
       loadTimes: () => {},
-      runtime: {},
+      runtime: {}
     }
   })
 }
@@ -66,7 +66,7 @@ const detectPlatform = (url: string): Platform => {
 
 const getSelectors = (platform: Platform, customSelector?: string) => ({
   msgSelector: customSelector ?? (platform === 'claude' ? CLAUDE_SELECTOR : CHATGPT_MSG_SELECTOR),
-  waitSelector: customSelector ?? (platform === 'claude' ? CLAUDE_SELECTOR : CHATGPT_WAIT_SELECTOR),
+  waitSelector: customSelector ?? (platform === 'claude' ? CLAUDE_SELECTOR : CHATGPT_WAIT_SELECTOR)
 })
 
 export const fetchTxt = async (url: string, options: FetchOptions = {}): Promise<string> => {
@@ -208,11 +208,16 @@ export const fetchPdf = async (url: string, options: FetchOptions = {}): Promise
 
     const pageTitle = await (async () => {
       if (platform === 'claude') {
-        const title = await page.evaluate(() => {
-          const lines = document.body.innerText.split('\n').map((l) => l.trim()).filter(Boolean)
-          const first = lines[0] ?? ''
-          return /shared by|this is a copy|you said|claude responded/i.test(first) ? '' : first
-        }).catch(() => '')
+        const title = await page
+          .evaluate(() => {
+            const lines = document.body.innerText
+              .split('\n')
+              .map((l) => l.trim())
+              .filter(Boolean)
+            const first = lines[0] ?? ''
+            return /shared by|this is a copy|you said|claude responded/i.test(first) ? '' : first
+          })
+          .catch(() => '')
         if (title) return title
       }
       return page.title()
@@ -322,9 +327,11 @@ export const fetchPdf = async (url: string, options: FetchOptions = {}): Promise
 
     // Strip Claude action bars (copy, share, thumbs up/down icons below each turn)
     if (platform === 'claude') {
-      await page.evaluate(() => {
-        document.querySelectorAll<HTMLElement>('[data-test-render-count] button, [data-test-render-count] [role="button"]').forEach((el) => el.remove())
-      }).catch(() => {})
+      await page
+        .evaluate(() => {
+          document.querySelectorAll<HTMLElement>('[data-test-render-count] button, [data-test-render-count] [role="button"]').forEach((el) => el.remove())
+        })
+        .catch(() => {})
     }
 
     await page.evaluate((el) => {
