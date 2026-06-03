@@ -1,4 +1,4 @@
-import type { CookieParam } from 'puppeteer'
+import type { CookieParam, Page } from 'puppeteer'
 import puppeteer from 'puppeteer'
 
 import { type PageSizeKey } from './constants'
@@ -26,19 +26,58 @@ type PageWindow = Window &
     __stopObserver: () => void
   }
 
+type Platform = 'chatgpt' | 'claude' | 'generic'
+
 const noop = () => {}
 
-const DEFAULT_SELECTOR = '[data-message-author-role], .text-message, article'
-const DEFAULT_MSG_SELECTOR = '[data-message-author-role]'
+const CHROME_UA = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36'
+
+const setupStealth = async (page: Page): Promise<void> => {
+  await page.setUserAgent(CHROME_UA)
+  await page.evaluateOnNewDocument(() => {
+    Object.defineProperty(navigator, 'webdriver', { get: () => undefined })
+    ;(window as Window & typeof globalThis & { chrome: unknown }).chrome = {
+      app: {},
+      csi: () => {},
+      loadTimes: () => {},
+      runtime: {},
+    }
+  })
+}
+
+const waitForCloudflare = async (page: Page, timeout: number): Promise<void> => {
+  const deadline = Date.now() + Math.min(timeout, 20000)
+  while (Date.now() < deadline) {
+    const title = await page.title().catch(() => '')
+    if (!/just a moment/i.test(title)) return
+    await new Promise((r) => setTimeout(r, 1000))
+  }
+}
+
+const CHATGPT_WAIT_SELECTOR = '[data-message-author-role], .text-message, article'
+const CHATGPT_MSG_SELECTOR = '[data-message-author-role]'
+const CLAUDE_SELECTOR = '[data-test-render-count]'
+
+const detectPlatform = (url: string): Platform => {
+  if (/claude\.ai/i.test(url)) return 'claude'
+  if (/chatgpt\.com/i.test(url)) return 'chatgpt'
+  return 'generic'
+}
+
+const getSelectors = (platform: Platform, customSelector?: string) => ({
+  msgSelector: customSelector ?? (platform === 'claude' ? CLAUDE_SELECTOR : CHATGPT_MSG_SELECTOR),
+  waitSelector: customSelector ?? (platform === 'claude' ? CLAUDE_SELECTOR : CHATGPT_WAIT_SELECTOR),
+})
 
 export const fetchTxt = async (url: string, options: FetchOptions = {}): Promise<string> => {
   const { onProgress = noop, executablePath, args, timeout = 60000, cookies, selector, hideUserInput = false, hideAssistantOutput = false } = options
-  const msgSelector = selector ?? DEFAULT_MSG_SELECTOR
-  const waitSelector = selector ?? DEFAULT_SELECTOR
+  const platform = detectPlatform(url)
+  const { msgSelector, waitSelector } = getSelectors(platform, selector)
 
-  const browser = await puppeteer.launch({ headless: true, executablePath, args })
+  const browser = await puppeteer.launch({ headless: true, executablePath, args: ['--disable-blink-features=AutomationControlled', ...(args ?? [])] })
   try {
     const page = await browser.newPage()
+    await setupStealth(page)
     await page.setViewport({ width: 1280, height: 900 })
     await page.emulateMediaFeatures([{ name: 'prefers-color-scheme', value: 'light' }])
 
@@ -46,6 +85,8 @@ export const fetchTxt = async (url: string, options: FetchOptions = {}): Promise
 
     onProgress('Loading page')
     await page.goto(url, { waitUntil: 'domcontentloaded', timeout })
+    await waitForCloudflare(page, timeout)
+    if (platform === 'claude') await page.waitForNetworkIdle({ idleTime: 1000, timeout: 15000 }).catch(() => {})
 
     onProgress('Waiting for content')
     await page.waitForSelector(waitSelector, { timeout: Math.min(15000, timeout) }).catch(() => {})
@@ -87,19 +128,26 @@ export const fetchTxt = async (url: string, options: FetchOptions = {}): Promise
 
     onProgress('Extracting text')
     const text = await page.evaluate(
-      (sel, hideUser, hideAssistant) => {
+      (sel, hideUser, hideAssistant, plt) => {
         const turns = document.querySelectorAll(sel)
         if (turns.length > 0) {
           return Array.from(turns)
             .map((el) => {
-              const role = el.getAttribute('data-message-author-role')
+              const clone = el.cloneNode(true) as Element
+              clone.querySelectorAll('.sr-only, button, [role="button"]').forEach((n) => n.remove())
+              let role: string | null = null
+              if (plt === 'claude') {
+                role = clone.querySelector('[data-is-streaming]') !== null ? 'assistant' : 'user'
+              } else {
+                role = el.getAttribute('data-message-author-role')
+              }
               if (hideUser && role === 'user') return null
               if (hideAssistant && role !== 'user') return null
               if (role) {
                 const label = role === 'user' ? 'USER' : 'ASSISTANT'
-                return `[${label}]\n${el.textContent?.trim() ?? ''}`
+                return `[${label}]\n${clone.textContent?.trim() ?? ''}`
               }
-              return el.textContent?.trim() ?? ''
+              return clone.textContent?.trim() ?? ''
             })
             .filter(Boolean)
             .join('\n\n---\n\n')
@@ -108,7 +156,8 @@ export const fetchTxt = async (url: string, options: FetchOptions = {}): Promise
       },
       msgSelector,
       hideUserInput,
-      hideAssistantOutput
+      hideAssistantOutput,
+      platform
     )
 
     return text
@@ -126,12 +175,13 @@ export const fetchPdf = async (url: string, options: FetchOptions = {}): Promise
   const { pageSize = 'letter', margin = 36, landscape = false, onProgress = noop, executablePath, args, timeout = 60000, cookies, selector, hideUserInput = false, hideAssistantOutput = false } = options
   const marginIn = margin / 72
   const pageSizeFmt = pageSize === 'a4' ? 'A4' : 'Letter'
-  const msgSelector = selector ?? DEFAULT_MSG_SELECTOR
-  const waitSelector = selector ?? DEFAULT_SELECTOR
+  const platform = detectPlatform(url)
+  const { msgSelector, waitSelector } = getSelectors(platform, selector)
 
-  const browser = await puppeteer.launch({ headless: true, executablePath, args })
+  const browser = await puppeteer.launch({ headless: true, executablePath, args: ['--disable-blink-features=AutomationControlled', ...(args ?? [])] })
   try {
     const page = await browser.newPage()
+    await setupStealth(page)
     await page.setViewport({ width: 1280, height: 900 })
     await page.emulateMediaFeatures([{ name: 'prefers-color-scheme', value: 'light' }])
 
@@ -139,6 +189,8 @@ export const fetchPdf = async (url: string, options: FetchOptions = {}): Promise
 
     onProgress('Loading page')
     await page.goto(url, { waitUntil: 'domcontentloaded', timeout })
+    await waitForCloudflare(page, timeout)
+    if (platform === 'claude') await page.waitForNetworkIdle({ idleTime: 1000, timeout: 15000 }).catch(() => {})
 
     onProgress('Waiting for content')
     await page.waitForSelector(waitSelector, { timeout: Math.min(15000, timeout) }).catch(() => {})
@@ -154,7 +206,17 @@ export const fetchPdf = async (url: string, options: FetchOptions = {}): Promise
       .catch(() => {})
     await new Promise((r) => setTimeout(r, 500))
 
-    const pageTitle = await page.title()
+    const pageTitle = await (async () => {
+      if (platform === 'claude') {
+        const title = await page.evaluate(() => {
+          const lines = document.body.innerText.split('\n').map((l) => l.trim()).filter(Boolean)
+          const first = lines[0] ?? ''
+          return /shared by|this is a copy|you said|claude responded/i.test(first) ? '' : first
+        }).catch(() => '')
+        if (title) return title
+      }
+      return page.title()
+    })()
 
     onProgress('Hiding fixed UI chrome')
     await page.addStyleTag({
@@ -258,6 +320,13 @@ export const fetchPdf = async (url: string, options: FetchOptions = {}): Promise
       })
     })
 
+    // Strip Claude action bars (copy, share, thumbs up/down icons below each turn)
+    if (platform === 'claude') {
+      await page.evaluate(() => {
+        document.querySelectorAll<HTMLElement>('[data-test-render-count] button, [data-test-render-count] [role="button"]').forEach((el) => el.remove())
+      }).catch(() => {})
+    }
+
     await page.evaluate((el) => {
       el.scrollTop = 0
     }, containerHandle)
@@ -313,6 +382,7 @@ export const fetchPdf = async (url: string, options: FetchOptions = {}): Promise
 
     const nodeCount = await page.evaluate(() => (window as PageWindow).__nodes.length)
     onProgress(`Collected ${nodeCount} message nodes`)
+    if (nodeCount === 0) throw new Error('No content found — the page may have blocked the request, or use --selector to specify the right CSS selector')
 
     const { nodesJson, stylesheetsJson } = await page.evaluate(() => {
       ;(window as PageWindow).__stopObserver()
@@ -336,6 +406,9 @@ export const fetchPdf = async (url: string, options: FetchOptions = {}): Promise
 
     const styleInjections = sheetDefs.map((s) => (s.type === 'link' ? `<link rel="stylesheet" href="${s.href}">` : `<style>${s.content}</style>`)).join('\n')
 
+    const userSel = platform === 'claude' ? '[data-test-render-count]:not(:has([data-is-streaming]))' : '[data-message-author-role="user"]'
+    const aiSel = platform === 'claude' ? '[data-test-render-count]:has([data-is-streaming])' : '[data-message-author-role="assistant"]'
+
     const staticHtml = `<!DOCTYPE html>
 <html>
 <head>
@@ -357,6 +430,7 @@ ${styleInjections}
       overflow: visible !important;
     }
   }
+  .sr-only { display: none !important; }
   * { scrollbar-width: none !important; }
   *::-webkit-scrollbar, *::-webkit-scrollbar-track, *::-webkit-scrollbar-thumb { display: none !important; width: 0 !important; }
   *::before, *::after {
@@ -380,11 +454,11 @@ ${styleInjections}
     flex-direction: column;
     gap: 0;
   }
-  [data-message-author-role="user"] {
+  ${userSel} {
     padding-bottom: 28px !important;
   }
-  ${hideUserInput ? '[data-message-author-role="user"] { display: none !important; }' : ''}
-  ${hideAssistantOutput ? '[data-message-author-role="assistant"] { display: none !important; }' : ''}
+  ${hideUserInput ? `${userSel} { display: none !important; }` : ''}
+  ${hideAssistantOutput ? `${aiSel} { display: none !important; }` : ''}
 </style>
 </head>
 <body>

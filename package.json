@@ -1,12 +1,17 @@
 {
   "name": "snapdf",
   "version": "1.0.9",
-  "description": "Save ChatGPT conversations and JavaScript-rendered pages to searchable PDF or plain text",
+  "description": "Save ChatGPT and Claude conversations and JavaScript-rendered pages to searchable PDF or plain text",
   "keywords": [
     "cli",
     "pdf",
     "chatgpt",
+    "claude",
     "chatgpt-to-pdf",
+    "claude-to-pdf",
+    "ai-conversation",
+    "conversation-to-pdf",
+    "llm",
     "html-to-pdf",
     "webpage-to-pdf",
     "puppeteer",
@@ -47,7 +52,7 @@
     "test": "jest",
     "test:watch": "jest --watchAll",
     "typecheck": "tsc --noEmit",
-    "preversion": "npm run lint && npm test",
+    "preversion": "npm run lint && npm test && npm run build",
     "watch": "tsup --watch"
   },
   "dependencies": {

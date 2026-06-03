@@ -25,7 +25,7 @@ snapdf <url> [output]
 | `-m`, `--margin` | Margin in points, 72pt = 1in (default: `36`) |
 | `-l`, `--landscape` | Landscape orientation |
 | `-T`, `--timeout` | Page load timeout in milliseconds (default: `60000`) |
-| `-s`, `--selector` | CSS selector for message elements (default: ChatGPT) |
+| `-s`, `--selector` | CSS selector for message elements (auto-detected for ChatGPT and Claude) |
 | `-H`, `--hide-user-input` | Omit user messages from the output |
 | `-A`, `--hide-assistant-output` | Omit assistant messages from the output |
 
@@ -34,6 +34,9 @@ snapdf <url> [output]
 ```sh
 # Save a ChatGPT shared conversation to PDF
 snapdf https://chatgpt.com/share/abc123
+
+# Save a Claude shared conversation to PDF
+snapdf https://claude.ai/share/abc123
 
 # Custom output path
 snapdf https://chatgpt.com/share/abc123 conversation.pdf
@@ -163,12 +166,12 @@ const { buffer } = await fetchPdf(url, {
 
 ## Other sites
 
-The default selector targets ChatGPT's conversation format. For other sites, pass a CSS selector that matches the repeating content nodes you want captured:
+ChatGPT and Claude share URLs are auto-detected — no selector needed. For other sites, pass a CSS selector that matches the repeating content nodes you want captured:
 
 ```ts
-// Claude.ai
-await fetchPdf(url, { selector: '[data-testid="human-turn"], [data-testid="ai-turn"]' })
-
 // Generic blog/article
 await fetchPdf(url, { selector: 'article' })
+
+// Any custom format
+await fetchPdf(url, { selector: '.message-bubble' })
 ```
