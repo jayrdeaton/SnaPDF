@@ -3,12 +3,13 @@ jest.mock('puppeteer', () => ({
   default: { launch: jest.fn() }
 }))
 
-jest.mock('termpulse', () => ({
+jest.mock('termkit', () => ({
   __esModule: true,
+  ...jest.requireActual('termkit'),
   Spinner: jest.fn().mockImplementation(() => ({
     start: jest.fn().mockReturnThis(),
     stop: jest.fn().mockReturnThis(),
-    message: jest.fn().mockReturnThis(),
+    update: jest.fn().mockReturnThis(),
     succeed: jest.fn().mockReturnThis(),
     fail: jest.fn().mockReturnThis(),
   }))

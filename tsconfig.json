@@ -5,16 +5,16 @@
     "module": "ESNext",
     "moduleResolution": "bundler",
     "strict": true,
-    "declaration": false,
+    "rootDir": "./src",
+    "declaration": true,
     "sourceMap": true,
     "outDir": "dist",
     "skipLibCheck": true,
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
     "resolveJsonModule": true,
-    "types": ["node"],
-    "ignoreDeprecations": "6.0"
+    "types": ["node"]
   },
-  "include": ["src", "tsup.config.ts"],
+  "include": ["src"],
   "exclude": ["node_modules", "dist", "src/__tests__"]
 }

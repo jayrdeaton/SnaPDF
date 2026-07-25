@@ -76,7 +76,6 @@ const { buffer, title } = await fetchPdf('https://chatgpt.com/share/abc123', {
   margin: 36,           // points, 72pt = 1in
   landscape: false,
   timeout: 60000,       // ms
-  selector: '[data-message-author-role]',
   cookies: [{ name: 'session', value: '...', domain: 'chatgpt.com' }],
   executablePath: '/path/to/chrome',
   args: ['--no-sandbox'],
@@ -91,7 +90,6 @@ await fs.writeFile(`${title}.pdf`, buffer)
 ```ts
 const text = await fetchTxt('https://chatgpt.com/share/abc123', {
   timeout: 60000,
-  selector: '[data-message-author-role]',
   cookies: [...],
   executablePath: '/path/to/chrome',
   args: ['--no-sandbox'],

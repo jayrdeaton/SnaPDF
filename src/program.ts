@@ -1,14 +1,9 @@
-import cosmeticLib from 'cosmetic'
 import fs from 'fs/promises'
 import path from 'path'
-import { command } from 'termkit'
-import { Spinner } from 'termpulse'
+import { Color as cosmetic, Program, Spinner } from 'termkit'
 
 import { type PageSizeKey } from './constants'
 import { fetchPdf, type FetchResult, fetchTxt } from './fetch'
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const cosmetic = cosmeticLib as any
 
 const titleToFilename = (title: string): string => {
   // Strip common site suffixes like " - Claude" or " | ChatGPT"
@@ -42,7 +37,7 @@ const resolveOutputPath = async (desired: string): Promise<string> => {
 }
 
 export const createProgram = () =>
-  command('snapdf', '<url> [output]')
+  Program.command('snapdf', '<url> [output]')
     .description('Scrape JavaScript-rendered pages to PDF or plain text')
     .option('t', 'txt', null, 'Save as a plain text file instead of PDF')
     .option('p', 'page-size', '[size]', 'PDF page size: a4 or letter (default: letter)')
@@ -71,7 +66,7 @@ export const createProgram = () =>
       spinner.start()
 
       const onProgress = (msg: string) => {
-        spinner.message(cosmetic.faint(msg))
+        spinner.update(cosmetic.faint(msg))
       }
 
       if (txtMode) {
@@ -82,7 +77,7 @@ export const createProgram = () =>
 
         const normalizedOut = outFile ? (path.extname(outFile) ? outFile : `${outFile}${ext}`) : `output${ext}`
         const dest = await resolveOutputPath(normalizedOut)
-        spinner.message(`Saving to ${cosmetic.cyan(dest)}`)
+        spinner.update(`Saving to ${cosmetic.cyan(dest)}`)
         await fs.writeFile(dest, text, 'utf8')
         spinner.succeed(`Saved to ${cosmetic.underline.cyan(dest)}`).stop()
       } else {
@@ -94,7 +89,7 @@ export const createProgram = () =>
 
         const defaultName = outFile ? (path.extname(outFile) ? outFile : `${outFile}${ext}`) : `${titleToFilename(title)}${ext}`
         const dest = await resolveOutputPath(defaultName)
-        spinner.message(`Saving to ${cosmetic.cyan(dest)}`)
+        spinner.update(`Saving to ${cosmetic.cyan(dest)}`)
         await fs.writeFile(dest, pdf)
         spinner.succeed(`Saved to ${cosmetic.underline.cyan(dest)}`).stop()
       }

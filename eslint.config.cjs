@@ -7,7 +7,7 @@ const packageJson = require('eslint-plugin-package-json')
 
 module.exports = defineConfig([
   {
-    files: ['**/*.ts'],
+    files: ['src/**/*.ts'],
     languageOptions: {
       parser: tsParser,
       parserOptions: {
