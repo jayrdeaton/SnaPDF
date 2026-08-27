@@ -46,38 +46,36 @@
   ],
   "scripts": {
     "build": "tsup && tsc --emitDeclarationOnly",
+    "ci": "npm run lint && npm test && npm run typecheck && npm run build",
     "fix": "eslint --fix",
     "lint": "eslint",
     "prepublishOnly": "npm run build",
     "release": "git push --follow-tags",
-    "release:major": "npm version major && git push --follow-tags",
-    "release:minor": "npm version minor && git push --follow-tags",
-    "release:patch": "npm version patch && git push --follow-tags",
+    "release:major": "npm version major && npm run release",
+    "release:minor": "npm version minor && npm run release",
+    "release:patch": "npm version patch && npm run release",
     "test": "jest",
     "test:watch": "jest --watchAll",
     "typecheck": "tsc --noEmit",
-    "preversion": "npm run lint && npm test && npm run build",
+    "preversion": "npm run ci",
     "watch": "tsup --watch"
   },
+  "prettier": "@infinitetoken/eslint-config/prettier",
   "dependencies": {
     "puppeteer": "^25.3.0",
     "termkit": "^2.4.9"
   },
   "devDependencies": {
+    "@infinitetoken/eslint-config": "^0.1.1",
+    "@infinitetoken/tsconfig": "^0.1.1",
     "@types/jest": "^30.0.0",
     "@types/node": "^26.1.1",
-    "@typescript-eslint/parser": "^8.65.0",
     "eslint": "^10.8.0",
-    "eslint-config-prettier": "^10.1.8",
-    "eslint-plugin-package-json": "^1.6.1",
-    "eslint-plugin-prettier": "^5.5.6",
-    "eslint-plugin-simple-import-sort": "^14.0.0",
     "jest": "^30.4.2",
     "prettier": "^3.9.6",
     "ts-jest": "^29.4.12",
     "ts-node": "^10.9.2",
     "tsup": "^8.5.1",
-    "typescript": "^6.0.3",
-    "typescript-eslint": "^8.65.0"
+    "typescript": "^6.0.3"
   }
 }
