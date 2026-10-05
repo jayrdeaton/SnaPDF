@@ -1,21 +1,10 @@
-/** @type {import('jest').Config} */
-module.exports = {
-  preset: 'ts-jest',
-  testEnvironment: 'node',
-  roots: ['<rootDir>/src'],
-  transform: {
-    '^.+\\.tsx?$': [
-      'ts-jest',
-      {
-        tsconfig: {
-          module: 'CommonJS',
-          moduleResolution: 'node',
-          ignoreDeprecations: '5.0',
-          types: ['jest', 'node']
-        }
-      }
-    ]
-  },
-  testMatch: ['**/__tests__/**/*.test.ts'],
-  setupFilesAfterEnv: ['<rootDir>/jest.setup.cjs']
-}
+module.exports = require('@infinitetoken/jest-config/node')({
+  overrides: {
+    // cli.ts is a 3-line executable entry point (bin/snapdf) that just calls
+    // program.ts (which IS tested); it also uses a top-level `await` that
+    // ts-jest's CommonJS coverage-instrumentation pass can't compile, so
+    // collecting coverage on it fails outright. Excluded for the same reason
+    // src/index.ts is excluded by default.
+    collectCoverageFrom: ['src/**/*.ts', '!src/**/*.d.ts', '!src/index.ts', '!src/cli.ts', '!**/__tests__/**']
+  }
+})
